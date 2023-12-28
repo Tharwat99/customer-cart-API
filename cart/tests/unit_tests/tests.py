@@ -2,7 +2,7 @@ from django.urls import reverse
 from django.test import TestCase
 from rest_framework import status
 from rest_framework.test import APIClient
-from cart.models import Cart
+from cart.models import Cart, CartItem
 from customer.models import Customer
 from product.models import Product
 
@@ -35,7 +35,10 @@ class CartListCreateViewTestCase(TestCase):
         self.assertEqual(Cart.objects.count(), 1)  # Check if the cart was created
         self.assertEqual(Cart.objects.first().customer.name, 'Ali')
 
-class CartManipulationViewTest(TestCase):
+class CartAddItemViewTest(TestCase):
+    """
+    Test Cases for add item to cart.
+    """
     def setUp(self):
         # Create test data
         self.client = APIClient()
@@ -81,5 +84,40 @@ class CartManipulationViewTest(TestCase):
             'quantity': 15,  # Quantity exceeds stock
         }
         response = self.client.post(self.add_item_to_cart, data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('error', response.data)
+    
+class CartRemoveItemViewTest(TestCase):
+    """
+    Test Cases for remove item from cart.
+    """
+    def setUp(self):
+        # Create test data
+        self.client = APIClient()
+        item_quantity = 3
+        self.customer = Customer.objects.create(name='Hassan')
+        self.cart = Cart.objects.create(customer = self.customer)
+        self.product = Product.objects.create(name='Test Product', price = 500, stock_quantity=10)
+        self.cart_item = CartItem.objects.create(cart=self.cart, product=self.product, quantity=item_quantity)
+        self.product.stock_quantity -= item_quantity
+        self.product.save()
+        self.remove_item_from_cart = reverse('remove_item_from_cart')
+        
+    def test_remove_from_cart_success(self):
+        data = {
+            'cart_item_id': self.cart_item.id,
+        }
+        self.assertEqual(self.product.stock_quantity, 7)
+        response = self.client.post(self.remove_item_from_cart, data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.product.refresh_from_db()
+        self.assertEqual(self.product.stock_quantity, 10)
+    
+    def test_remove_from_cart_invalid_cart_item(self):
+        data = {
+            'cart_item_id': 999,  # Invalid cart_item_id
+
+        }
+        response = self.client.post(self.remove_item_from_cart, data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('error', response.data)
