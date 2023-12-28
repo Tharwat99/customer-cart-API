@@ -100,3 +100,29 @@ def update_cart_item_quantity(request):
     cart_item.save()
 
     return Response({'message': 'Cart item quantity updated'})
+
+@api_view(['POST'])
+def checkout(request):
+    """
+    View to  for checkout orderitems in cart and update ordered to true and check if
+     - cart  already exists.
+     - new quantity greater than 0
+     - product stock not have enough amount.
+    """
+    cart_id = request.data.get('cart_id', None)
+    
+    try:
+        cart = Cart.objects.get(id=cart_id)
+    except Cart.DoesNotExist:
+        return Response({"error": "Invalid cart item."}, status=status.HTTP_404_NOT_FOUND)
+    cart_order_items = cart.cartitem_set.filter(ordered=False)
+    if len(cart_order_items)==0:
+        return Response({'error': 'Cart is empty.'}, status=status.HTTP_400_BAD_REQUEST)
+    else:
+        for cart_item in cart.cartitem_set.filter(ordered=False):
+            cart_item.ordered = True
+            cart_item.save()
+            product = cart_item.product
+            product.stock_quantity -= cart_item.quantity
+            product.save()
+    return Response({'message': 'Cart checked out.'}, status=status.HTTP_200_OK)
