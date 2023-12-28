@@ -39,7 +39,7 @@ def add_to_cart(request):
         cart = Cart.objects.get(id=cart_id)
         product = Product.objects.get(id=product_id)
     except (Cart.DoesNotExist, Product.DoesNotExist):
-        return Response({"error": "Invalid cart or product."}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"error": "Invalid cart or product."}, status=status.HTTP_404_NOT_FOUND)
     
     if product.stock_quantity < quantity:
         return Response({'error': 'Insufficient stock quantity'}, status=status.HTTP_400_BAD_REQUEST)
