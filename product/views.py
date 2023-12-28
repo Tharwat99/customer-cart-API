@@ -5,8 +5,8 @@ from .serializers import ProductListSerializer, ProductCreateSerializer
 
 class ProductListView(generics.ListCreateAPIView):
     queryset = Product.objects.all()
-    serializer_class = ProductSerializer
+    serializer_class = ProductListSerializer
 
 class ProductCreateView(generics.ListCreateAPIView):
     queryset = Product.objects.all()
-    serializer_class = ProductSerializer
+    serializer_class = ProductCreateSerializer
