@@ -166,3 +166,47 @@ class CartUpdateItemQuantityViewTest(TestCase):
         response = self.client.post(self.update_cart_item_quantity, data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('error', response.data)
+
+class CartCheckoutViewTest(TestCase):
+    """
+    Test Cases for Cart Checkout view.
+    """
+    def setUp(self):
+        # Create test data
+        self.client = APIClient()
+        item_quantity = 3
+        self.customer = Customer.objects.create(name='Hassan')
+        self.cart = Cart.objects.create(customer = self.customer)
+        other_customer = Customer.objects.create(name='Hassan')
+        self.empty_cart = Cart.objects.create(customer = other_customer)
+        self.product = Product.objects.create(name='Test Product', price = 500, stock_quantity=10)
+        self.cart_item = CartItem.objects.create(cart=self.cart, product=self.product, quantity=item_quantity)
+        self.product.stock_quantity -= item_quantity
+        self.product.save()
+        self.cart_checkout = reverse('cart_checkout')
+        
+    def test_cart_checkout_success(self):
+        data = {
+            'cart_id': self.cart.id
+        }
+        self.assertEqual(self.cart.cartitem_set.filter(ordered=False).count(), 1)
+        response = self.client.post(self.cart_checkout, data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.cart.refresh_from_db()
+        self.assertEqual(self.cart.cartitem_set.filter(ordered=False).count(), 0)
+    
+    def test_cart_checkout_invalid_cart(self):
+        data = {
+            'cart_id': 999,  # Invalid cart_id
+        }
+        response = self.client.post(self.cart_checkout, data)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertIn('error', response.data)
+    
+    def test_cart_checkout_empty_cart(self):
+        data = {
+            'cart_id': self.empty_cart.id
+        }
+        response = self.client.post(self.cart_checkout, data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn('error', response.data)
