@@ -2,7 +2,7 @@ from rest_framework import generics
 from .models import Customer
 from .serializers import CustomerListSerializer, CustomerCreateSerializer
 
-class CustomerListCreateView(generics.ListAPIView):
+class CustomerListView(generics.ListAPIView):
     """
     View to list all serilized customer in form of CustomerListSerializer.
     """
@@ -10,7 +10,7 @@ class CustomerListCreateView(generics.ListAPIView):
     serializer_class = CustomerListSerializer
 
 
-class CustomerListCreateView(generics.CreateAPIView):
+class CustomerCreateView(generics.CreateAPIView):
     """
     View to create customer in form of CustomerCreateSerializer.
     """
