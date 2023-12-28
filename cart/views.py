@@ -23,6 +23,12 @@ class CartCreateView(generics.ListCreateAPIView):
 
 @api_view(['POST'])
 def add_to_cart(request):
+    """
+    View to add item product to cart and check if
+     - quantity greater than zero    
+     - cart and product already exists
+     - product stock greater than zero.
+    """
     cart_id = request.data.get('cart_id', None)
     product_id = request.data.get('product_id', None)
     quantity = int(request.data.get('quantity'))
@@ -41,3 +47,4 @@ def add_to_cart(request):
     cart_item = CartItem.objects.create(cart=cart, product=product, quantity=quantity)
     serializer = CartItemSerializer(cart_item)
     return Response(serializer.data, status=status.HTTP_201_CREATED)
+
