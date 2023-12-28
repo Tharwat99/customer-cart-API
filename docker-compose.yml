@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   api:
-    container_name: unbench_backend
+    container_name: customer_cart_API
     command: python manage.py runserver 0.0.0.0:8000
     build: .
     ports:
