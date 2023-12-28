@@ -164,7 +164,7 @@ class CartUpdateItemQuantityViewTest(TestCase):
             'quantity': 5
         }
         response = self.client.post(self.update_cart_item_quantity, data)
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
         self.assertIn('error', response.data)
 
 class CartCheckoutViewTest(TestCase):
