@@ -59,7 +59,7 @@ def remove_from_cart(request):
     try:
         cart_item = CartItem.objects.get(id=cart_item_id)
     except CartItem.DoesNotExist:
-        return Response({"error": "Invalid cart item."}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"error": "Invalid cart item."}, status=status.HTTP_404_NOT_FOUND)
     
     product = cart_item.product
 
