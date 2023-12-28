@@ -69,3 +69,27 @@ def remove_from_cart(request):
     cart_item.delete()
 
     return Response({'message': 'Product removed from cart'})
+
+@api_view(['POST'])
+def update_cart_item_quantity(request):
+    cart_item_id = request.data.get('cart_item_id', None)
+    new_quantity = int(request.data.get('quantity', 0))
+    if new_quantity < 0:
+        return Response({'error': 'Quantity must be more than zero'}, status=status.HTTP_400_BAD_REQUEST)
+    try:
+        cart_item = CartItem.objects.get(id=cart_item_id)
+    except CartItem.DoesNotExist:
+        return Response({"error": "Invalid cart item."}, status=status.HTTP_400_BAD_REQUEST)
+    
+    product = cart_item.product
+
+    if product.stock_quantity < new_quantity:
+        return Response({'error': 'Insufficient stock quantity'})
+
+    product.stock_quantity += cart_item.quantity - new_quantity
+    product.save()
+
+    cart_item.quantity = new_quantity
+    cart_item.save()
+
+    return Response({'message': 'Cart item quantity updated'})
