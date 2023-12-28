@@ -102,9 +102,9 @@ def update_cart_item_quantity(request):
     return Response({'message': 'Cart item quantity updated'})
 
 @api_view(['POST'])
-def checkout(request):
+def cart_checkout(request):
     """
-    View to  for checkout orderitems in cart and update ordered to true and check if
+    View to checkout orderitems in cart and update ordered to true and check if
      - cart  already exists.
      - new quantity greater than 0
      - product stock not have enough amount.
