@@ -50,6 +50,10 @@ def add_to_cart(request):
 
 @api_view(['POST'])
 def remove_from_cart(request):
+    """
+    View to remove item product from cart and check if
+     - cart item already exists.
+    """
     cart_item_id = request.data.get('cart_item_id', None)
 
     try:
