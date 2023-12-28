@@ -72,6 +72,13 @@ def remove_from_cart(request):
 
 @api_view(['POST'])
 def update_cart_item_quantity(request):
+    """
+    View to update quantity for  item product in cart and check if
+     - cart item already exists.
+     - new quantity greater than 0
+     - product stock not have enough amount.
+    """
+
     cart_item_id = request.data.get('cart_item_id', None)
     new_quantity = int(request.data.get('quantity', 0))
     if new_quantity < 0:
