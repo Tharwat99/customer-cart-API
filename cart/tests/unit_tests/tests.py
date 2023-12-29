@@ -45,6 +45,8 @@ class CartAddItemViewTest(TestCase):
         self.customer = Customer.objects.create(name='Hassan')
         self.cart = Cart.objects.create(customer = self.customer)
         self.product = Product.objects.create(name='Test Product', price = 500, stock_quantity=10)
+        self.exists_product = Product.objects.create(name='Test Product', price = 500, stock_quantity=10)
+        self.exists_cart_item = CartItem.objects.create(cart=self.cart, product=self.exists_product, quantity=5) 
         self.add_item_to_cart = reverse('add_item_to_cart')
         
     def test_add_to_cart_success(self):
@@ -56,6 +58,21 @@ class CartAddItemViewTest(TestCase):
         response = self.client.post(self.add_item_to_cart, data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertIn('id', response.data)
+    
+    def test_update_already_exists_product_cart_success(self):
+        data = {
+            'cart_id': self.cart.id,
+            'product_id': self.exists_product.id,
+            'quantity': 3,
+        }
+        self.exists_cart_item 
+        self.assertEqual(self.exists_cart_item.quantity, 5)
+        response = self.client.post(self.add_item_to_cart, data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('id', response.data)
+        self.exists_cart_item.refresh_from_db()
+        self.assertEqual(self.exists_cart_item.quantity, 3)
+        
 
     def test_add_to_cart_invalid_quantity(self):
         data = {
