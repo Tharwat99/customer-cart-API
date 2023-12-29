@@ -183,16 +183,32 @@ def update_cart_item_quantity(request):
     cart_item.save()
     return Response({'message': 'Cart item quantity updated.'})
 
+
+@extend_schema(
+    request={
+        'application/json': {
+            'type': 'object',
+            'properties': {
+                'cart_item_id': {'type': 'integer'}
+            }
+        },
+    },
+    responses={
+        200: {'type': 'object', 'properties': {'message': {'type': 'string', 'default':'Cart checked out.'}}},
+        404: {'type': 'object', 'properties': {'error': {'type': 'string', 'default':'Cart is empty.'}}},        
+    },
+    description="""
+    View to checkout orderitems in cart and update ordered to true and check if
+     - cart have items to checkout.
+    """
+)
 @api_view(['POST'])
 def cart_checkout(request):
     """
     View to checkout orderitems in cart and update ordered to true and check if
-     - cart  already exists.
-     - new quantity greater than 0
-     - product stock not have enough amount.
+     - cart have items to checkout.
     """
     cart_id = request.data.get('cart_id', None)
-    
     cart_order_items = CartItem.objects.filter(cart_id = cart_id, ordered = False).all()
     if len(cart_order_items)==0:
         return Response({'error': 'Cart is empty.'}, status=status.HTTP_400_BAD_REQUEST)
