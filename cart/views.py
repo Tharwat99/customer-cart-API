@@ -31,8 +31,7 @@ class CartCreateView(generics.CreateAPIView):
                 'cart_id': {'type': 'integer'},
                 'product_id': {'type': 'integer'},
                 'quantity': {'type': 'integer'},
-            },
-            'required': ['cart_id', 'product_id', 'quantity'],
+            }
         },
     },
     responses={
@@ -88,6 +87,25 @@ def add_to_cart(request):
     serializer = CartItemSerializer(cart_item)
     return Response(serializer.data, status=status_code)
 
+@extend_schema(
+    request={
+        'application/json': {
+            'type': 'object',
+            'properties': {
+                'cart_item_id': {'type': 'integer'},
+            }
+        },
+    },
+    responses={
+        200: {'type': 'object', 'properties': {'message': {'type': 'string', 'default':'Product removed from cart'}}},
+        404: {'type': 'object', 'properties': {'error': {'type': 'string', 'default':'Invalid cart item.'}}},        
+    },
+    description="""
+    View to remove item product from cart and check if
+     - cart item already exists.
+    """,
+)
+
 @api_view(['POST'])
 def remove_from_cart(request):
     """
@@ -101,7 +119,7 @@ def remove_from_cart(request):
     except CartItem.DoesNotExist:
         return Response({"error": "Invalid cart item."}, status=status.HTTP_404_NOT_FOUND)
     cart_item.delete()
-    return Response({'message': 'Product removed from cart'})
+    return Response({'message': 'Product removed from cart.'})
 
 @api_view(['POST'])
 def update_cart_item_quantity(request):
