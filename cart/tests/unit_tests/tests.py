@@ -143,13 +143,10 @@ class CartUpdateItemQuantityViewTest(TestCase):
     def setUp(self):
         # Create test data
         self.client = APIClient()
-        item_quantity = 3
         self.customer = Customer.objects.create(name='Hassan')
         self.cart = Cart.objects.create(customer = self.customer)
         self.product = Product.objects.create(name='Test Product', price = 500, stock_quantity=10)
-        self.cart_item = CartItem.objects.create(cart=self.cart, product=self.product, quantity=item_quantity)
-        self.product.stock_quantity -= item_quantity
-        self.product.save()
+        self.cart_item = CartItem.objects.create(cart=self.cart, product=self.product, quantity=3)
         self.update_cart_item_quantity = reverse('update_cart_item_quantity')
         
     def test_update_item_quantity_in_cart_success(self):
@@ -157,12 +154,9 @@ class CartUpdateItemQuantityViewTest(TestCase):
             'cart_item_id': self.cart_item.id,
             'quantity': 5
         }
-        self.assertEqual(self.product.stock_quantity, 7)
         response = self.client.post(self.update_cart_item_quantity, data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.product.refresh_from_db()
-        self.assertEqual(self.product.stock_quantity, 5)
-    
+        
     def test_update_item_quantity_invalid_value(self):
         data = {
             'cart_item_id': self.cart_item.id,

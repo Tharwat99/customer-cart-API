@@ -22,7 +22,6 @@ class CartCreateView(generics.CreateAPIView):
     queryset = Cart.objects.all()
     serializer_class = CartCreateSerializer
 
-
 @extend_schema(
     request={
         'application/json': {
@@ -37,7 +36,7 @@ class CartCreateView(generics.CreateAPIView):
     responses={
         200: CartItemSerializer, 
         201: CartItemSerializer, 
-        400: OpenApiResponse(response= 300, description="Bad Request",
+        400: OpenApiResponse(response= 400, description="Bad Request",
             examples= [
                 OpenApiExample(name="Example 1",description="Quantity for item added less than zero",
                 value= {"error":"quantity must be more than zero."}
@@ -111,7 +110,6 @@ def add_to_cart(request):
      - cart item already exists.
     """,
 )
-
 @api_view(['POST'])
 def remove_from_cart(request):
     """
@@ -127,10 +125,41 @@ def remove_from_cart(request):
     cart_item.delete()
     return Response({'message': 'Product removed from cart.'})
 
+@extend_schema(
+    request={
+        'application/json': {
+            'type': 'object',
+            'properties': {
+                'cart_item_id': {'type': 'integer'},
+                'quantity': {'type': 'integer'},
+            }
+        },
+    },
+    responses={
+        200: {'type': 'object', 'properties': {'message': {'type': 'string', 'default':'Cart item quantity updated.'}}},
+        
+        400: OpenApiResponse(response= 400, description="Bad Request",
+            examples= [
+                OpenApiExample(name="Example 1",description="Quantity for item updated less than zero",
+                value= {"error":"quantity must be more than zero."}
+                ),
+                OpenApiExample(name="Example 2",description="Item updated stock less than new quantity",
+                value= {"error":"Insufficient stock quantity."}
+                ),
+        ]),
+        404: {'type': 'object', 'properties': {'error': {'type': 'string', 'default':'Invalid cart item.'}}},        
+    },
+    description="""
+    View to update quantity for item product in cart and check if
+     - cart item already exists.
+     - new quantity greater than 0
+     - product stock not have enough amount.
+    """
+)
 @api_view(['POST'])
 def update_cart_item_quantity(request):
     """
-    View to update quantity for  item product in cart and check if
+    View to update quantity for item product in cart and check if
      - cart item already exists.
      - new quantity greater than 0
      - product stock not have enough amount.
@@ -148,15 +177,11 @@ def update_cart_item_quantity(request):
     product = cart_item.product
 
     if product.stock_quantity < new_quantity:
-        return Response({'error': 'Insufficient stock quantity'})
-
-    product.stock_quantity += cart_item.quantity - new_quantity
-    product.save()
+        return Response({'error': 'Insufficient stock quantity.'}, status=status.HTTP_400_BAD_REQUEST)
 
     cart_item.quantity = new_quantity
     cart_item.save()
-
-    return Response({'message': 'Cart item quantity updated'})
+    return Response({'message': 'Cart item quantity updated.'})
 
 @api_view(['POST'])
 def cart_checkout(request):
