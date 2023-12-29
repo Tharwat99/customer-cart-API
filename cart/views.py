@@ -141,6 +141,6 @@ def cart_details(request):
         return Response({"error": "Invalid cart id."}, status=status.HTTP_404_NOT_FOUND)
     result = dict()
     result['cart_items'] = CartItemSerializer(cart_items, many=True).data
-    result['count'] = cart_items.count()
+    result['count'] = cart_items.aggregate(count=Sum('quantity'))['count']
     result['total_price'] =  cart_items.aggregate(total_price=Sum(F('product__price') * F('quantity')))['total_price']
     return Response(result, status=status.HTTP_200_OK)
