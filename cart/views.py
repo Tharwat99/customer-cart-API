@@ -2,6 +2,7 @@ from django.db.models import Sum, F
 from rest_framework import generics, status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from drf_spectacular.utils import extend_schema, OpenApiResponse, OpenApiExample
 from product.models import Product
 from .models import Cart, CartItem
 from .serializers import CartListSerializer, CartCreateSerializer, CartItemSerializer
@@ -22,6 +23,34 @@ class CartCreateView(generics.CreateAPIView):
     serializer_class = CartCreateSerializer
 
 
+@extend_schema(
+    request={
+        'application/json': {
+            'type': 'object',
+            'properties': {
+                'cart_id': {'type': 'integer'},
+                'product_id': {'type': 'integer'},
+                'quantity': {'type': 'integer'},
+            },
+            'required': ['cart_id', 'product_id', 'quantity'],
+        },
+    },
+    responses={
+        200: CartItemSerializer, 
+        201: CartItemSerializer, 
+        400: OpenApiResponse(response= 300, description="Bad Request",
+            examples= [
+                OpenApiExample(name="Example 1",description="Quantity for item added less than zero",
+                value= {"error":"quantity must be more than zero."}
+                ),
+                OpenApiExample(name="Example 2",description="Item added stock less than quantity",
+                value= {"error":"Insufficient stock quantity."}
+                ),
+        ]),
+        404: {'type': 'object', 'properties': {'error': {'type': 'string', 'default':'Invalid cart or product.'}}},        
+    },
+    description='View to add item product to cart and check if...',
+)
 @api_view(['POST'])
 def add_to_cart(request):
     """
@@ -46,7 +75,7 @@ def add_to_cart(request):
         return Response({"error": "Invalid cart or product."}, status=status.HTTP_404_NOT_FOUND)
     # check if product stock greater than or equal quantity
     if product.stock_quantity < quantity:
-        return Response({'error': 'Insufficient stock quantity'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'error': 'Insufficient stock quantity.'}, status=status.HTTP_400_BAD_REQUEST)
     # check if product already added before update it and override new quantity
     try:
         cart_item = CartItem.objects.get(cart =cart, product = product)
