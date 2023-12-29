@@ -57,4 +57,3 @@ To run the tests:
 ```sh
 (env)$ docker-compose run api sh -c "python manage.py test"
 ```
-```
