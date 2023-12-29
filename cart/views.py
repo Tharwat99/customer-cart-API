@@ -48,7 +48,13 @@ class CartCreateView(generics.CreateAPIView):
         ]),
         404: {'type': 'object', 'properties': {'error': {'type': 'string', 'default':'Invalid cart or product.'}}},        
     },
-    description='View to add item product to cart and check if...',
+    description= """
+    View to add item product to cart and check if
+     - quantity greater than zero    
+     - cart and product already exists
+     - product stock greater than or equal quantity
+     - product already added before than override it with new quantity.
+    """
 )
 @api_view(['POST'])
 def add_to_cart(request):
