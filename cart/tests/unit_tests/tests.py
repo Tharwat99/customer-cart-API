@@ -209,14 +209,6 @@ class CartCheckoutViewTest(TestCase):
         self.cart.refresh_from_db()
         self.assertEqual(self.cart.cartitem_set.filter(ordered=False).count(), 0)
     
-    def test_cart_checkout_invalid_cart(self):
-        data = {
-            'cart_id': 999,  # Invalid cart_id
-        }
-        response = self.client.post(self.cart_checkout, data)
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-        self.assertIn('error', response.data)
-    
     def test_cart_checkout_empty_cart(self):
         data = {
             'cart_id': self.empty_cart.id

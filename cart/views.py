@@ -114,15 +114,11 @@ def cart_checkout(request):
     """
     cart_id = request.data.get('cart_id', None)
     
-    try:
-        cart = Cart.objects.get(id=cart_id)
-    except Cart.DoesNotExist:
-        return Response({"error": "Invalid cart item."}, status=status.HTTP_404_NOT_FOUND)
-    cart_order_items = cart.cartitem_set.filter(ordered=False)
+    cart_order_items = CartItem.objects.filter(id = cart_id, ordered = False).all()
     if len(cart_order_items)==0:
         return Response({'error': 'Cart is empty.'}, status=status.HTTP_400_BAD_REQUEST)
     else:
-        for cart_item in cart.cartitem_set.filter(ordered=False):
+        for cart_item in cart_order_items:
             cart_item.ordered = True
             cart_item.save()
             product = cart_item.product
