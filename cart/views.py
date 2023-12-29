@@ -67,17 +67,10 @@ def remove_from_cart(request):
     cart_item_id = request.data.get('cart_item_id', None)
 
     try:
-        cart_item = CartItem.objects.get(id=cart_item_id)
+        cart_item = CartItem.objects.get(id=cart_item_id, ordered = False)
     except CartItem.DoesNotExist:
         return Response({"error": "Invalid cart item."}, status=status.HTTP_404_NOT_FOUND)
-    
-    product = cart_item.product
-
-    product.stock_quantity += cart_item.quantity
-    product.save()
-
     cart_item.delete()
-
     return Response({'message': 'Product removed from cart'})
 
 @api_view(['POST'])

@@ -124,12 +124,9 @@ class CartRemoveItemViewTest(TestCase):
         data = {
             'cart_item_id': self.cart_item.id,
         }
-        self.assertEqual(self.product.stock_quantity, 7)
         response = self.client.post(self.remove_item_from_cart, data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.product.refresh_from_db()
-        self.assertEqual(self.product.stock_quantity, 10)
-    
+        
     def test_remove_from_cart_invalid_cart_item(self):
         data = {
             'cart_item_id': 999,  # Invalid cart_item_id
