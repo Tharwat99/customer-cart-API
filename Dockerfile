@@ -1,9 +1,11 @@
-FROM python:3.13.0a2-alpine3.18
+FROM python:3.8
 
 
 # set environment variables
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1
+
+
 
 # install dependencies
 RUN pip install --upgrade pip

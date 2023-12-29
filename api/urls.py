@@ -16,14 +16,17 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from rest_framework_swagger.views import get_swagger_view
-
-schema_view = get_swagger_view(title='Pastebin API')
+from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 
 urlpatterns = [
+    # YOUR PATTERNS
+    path('schema/', SpectacularAPIView.as_view(), name='schema'),
+    # Optional UI:
+    path('schema/swagger-ui/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
+    path('schema/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
+
     path('admin/', admin.site.urls),
     path('customer/', include('customer.urls')),
     path('product/', include('product.urls')),
     path('cart/', include('cart.urls')),
-    path('docs/', schema_view),
 ]

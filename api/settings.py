@@ -133,7 +133,7 @@ REST_FRAMEWORK = {
 }
 SPECTACULAR_SETTINGS = {
     'TITLE': 'Customer-Cart-Api',
-    'DESCRIPTION': 'Your project description',
+    'DESCRIPTION': "API for an eCommerce site for customer cart manipulation. The API should allow users to view their cart details, add and remove products, and update the quantity of products in the cart.",
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
     # OTHER SETTINGS
