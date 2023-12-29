@@ -1,3 +1,4 @@
+from django.db.models import Sum, F
 from rest_framework import generics, status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -114,7 +115,7 @@ def cart_checkout(request):
     """
     cart_id = request.data.get('cart_id', None)
     
-    cart_order_items = CartItem.objects.filter(id = cart_id, ordered = False).all()
+    cart_order_items = CartItem.objects.filter(cart_id = cart_id, ordered = False).all()
     if len(cart_order_items)==0:
         return Response({'error': 'Cart is empty.'}, status=status.HTTP_400_BAD_REQUEST)
     else:
@@ -125,3 +126,21 @@ def cart_checkout(request):
             product.stock_quantity -= cart_item.quantity
             product.save()
     return Response({'message': 'Cart checked out.'}, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+def cart_details(request):
+    """
+    View to return cart details for all orders products, count, and total price if
+     - cart  already exists.
+    """
+    cart_id = request.data.get('cart_id', None)
+    try:
+        cart_items = CartItem.objects.prefetch_related('product').filter(cart_id = cart_id, ordered=False)
+    except Cart.DoesNotExist:
+        return Response({"error": "Invalid cart id."}, status=status.HTTP_404_NOT_FOUND)
+    result = dict()
+    result['cart_items'] = CartItemSerializer(cart_items, many=True).data
+    result['count'] = cart_items.count()
+    result['total_price'] =  cart_items.aggregate(total_price=Sum(F('product__price') * F('quantity')))['total_price']
+    return Response(result, status=status.HTTP_200_OK)
