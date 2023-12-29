@@ -43,8 +43,13 @@ def add_to_cart(request):
     
     if product.stock_quantity < quantity:
         return Response({'error': 'Insufficient stock quantity'}, status=status.HTTP_400_BAD_REQUEST)
-    
-    cart_item = CartItem.objects.create(cart=cart, product=product, quantity=quantity)
+    # check if product already added before update it and override new quantity
+    try:
+        cart_item = CartItem.objects.get(cart =cart, product = product)
+        cart_item.quantity = quantity
+        cart_item.save()
+    except CartItem.DoesNotExist:
+        cart_item = CartItem.objects.create(cart=cart, product=product, quantity=quantity)
     serializer = CartItemSerializer(cart_item)
     return Response(serializer.data, status=status.HTTP_201_CREATED)
 
