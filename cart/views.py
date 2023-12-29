@@ -7,14 +7,14 @@ from .models import Cart, CartItem
 from .serializers import CartListSerializer, CartCreateSerializer, CartItemSerializer
 
 
-class CartListView(generics.ListCreateAPIView):
+class CartListView(generics.ListAPIView):
     """
     View to list all serilized carts in form of CartListSerializer.
     """
     queryset = Cart.objects.all()
     serializer_class = CartListSerializer
 
-class CartCreateView(generics.ListCreateAPIView):
+class CartCreateView(generics.CreateAPIView):
     """
     View to create Cart for customer in form of CartCreateSerializer.
     """
