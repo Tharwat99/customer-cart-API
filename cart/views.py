@@ -27,20 +27,23 @@ def add_to_cart(request):
     View to add item product to cart and check if
      - quantity greater than zero    
      - cart and product already exists
-     - product stock greater than zero.
+     - product stock greater than or equal quantity
+     - product already added before than override it with new quantity.
     """
     cart_id = request.data.get('cart_id', None)
     product_id = request.data.get('product_id', None)
-    quantity = int(request.data.get('quantity'))
+    quantity = int(request.data.get('quantity', '0'))
 
+    # check if quantity less than zero then error message
     if quantity <= 0:
-        return Response({'error': 'Quantity must be more than zero'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'error': 'quantity must be more than zero'}, status=status.HTTP_400_BAD_REQUEST)
+    # check if cart and product already exists
     try:
         cart = Cart.objects.get(id=cart_id)
         product = Product.objects.get(id=product_id)
     except (Cart.DoesNotExist, Product.DoesNotExist):
         return Response({"error": "Invalid cart or product."}, status=status.HTTP_404_NOT_FOUND)
-    
+    # check if product stock greater than or equal quantity
     if product.stock_quantity < quantity:
         return Response({'error': 'Insufficient stock quantity'}, status=status.HTTP_400_BAD_REQUEST)
     # check if product already added before update it and override new quantity
@@ -48,10 +51,12 @@ def add_to_cart(request):
         cart_item = CartItem.objects.get(cart =cart, product = product)
         cart_item.quantity = quantity
         cart_item.save()
+        status_code = status.HTTP_200_OK
     except CartItem.DoesNotExist:
         cart_item = CartItem.objects.create(cart=cart, product=product, quantity=quantity)
+        status_code = status.HTTP_201_CREATED
     serializer = CartItemSerializer(cart_item)
-    return Response(serializer.data, status=status.HTTP_201_CREATED)
+    return Response(serializer.data, status=status_code)
 
 @api_view(['POST'])
 def remove_from_cart(request):
