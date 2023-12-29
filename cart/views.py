@@ -222,18 +222,40 @@ def cart_checkout(request):
     return Response({'message': 'Cart checked out.'}, status=status.HTTP_200_OK)
 
 
+@extend_schema(
+    request={
+        'application/json': {
+            'type': 'object',
+            'properties': {
+                'cart_id': {'type': 'integer'},
+                'product_id': {'type': 'integer'},
+                'quantity': {'type': 'integer'},
+            }
+        },
+    },
+    responses={
+        200: CartItemSerializer,
+    },
+    description= """
+    View to return cart details for all orders products, count, and total price if
+     - cart have items
+    """
+)
 @api_view(['POST'])
 def cart_details(request):
     """
     View to return cart details for all orders products, count, and total price if
-     - cart  already exists.
+     - cart have items.
     """
     cart_id = request.data.get('cart_id', None)
     cart_items = CartItem.objects.prefetch_related('product').filter(cart_id = cart_id, ordered=False)
-    if len(cart_items) == 0:
-        return Response({"error": "Invalid cart id."}, status=status.HTTP_404_NOT_FOUND)
     result = dict()
-    result['cart_items'] = CartItemSerializer(cart_items, many=True).data
-    result['count'] = cart_items.aggregate(count=Sum('quantity'))['count']
-    result['total_price'] =  cart_items.aggregate(total_price=Sum(F('product__price') * F('quantity')))['total_price']
+    if len(cart_items) == 0:
+        result['cart_items'] = []
+        result['count'] = 0
+        result['total_price'] = 0
+    else:
+        result['cart_items'] = CartItemSerializer(cart_items, many=True).data
+        result['count'] = cart_items.aggregate(count=Sum('quantity'))['count']
+        result['total_price'] =  cart_items.aggregate(total_price=Sum(F('product__price') * F('quantity')))['total_price']
     return Response(result, status=status.HTTP_200_OK)

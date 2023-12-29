@@ -242,5 +242,5 @@ class CartDetailsViewTest(TestCase):
             'cart_id': 999 # Invalid cart_item_id
         }
         response = self.client.post(self.cart_details, data)
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-        self.assertIn('error', response.data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data['cart_items']), 0)
