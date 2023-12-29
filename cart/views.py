@@ -135,9 +135,8 @@ def cart_details(request):
      - cart  already exists.
     """
     cart_id = request.data.get('cart_id', None)
-    try:
-        cart_items = CartItem.objects.prefetch_related('product').filter(cart_id = cart_id, ordered=False)
-    except Cart.DoesNotExist:
+    cart_items = CartItem.objects.prefetch_related('product').filter(cart_id = cart_id, ordered=False)
+    if len(cart_items) == 0:
         return Response({"error": "Invalid cart id."}, status=status.HTTP_404_NOT_FOUND)
     result = dict()
     result['cart_items'] = CartItemSerializer(cart_items, many=True).data

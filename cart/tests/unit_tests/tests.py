@@ -216,3 +216,37 @@ class CartCheckoutViewTest(TestCase):
         response = self.client.post(self.cart_checkout, data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn('error', response.data)
+
+class CartDetailsViewTest(TestCase):
+    """
+    Test Cases for Cart Details view.
+    """
+    def setUp(self):
+        # Create test data
+        self.client = APIClient()
+        item_quantity = 3
+        self.customer = Customer.objects.create(name='Hassan')
+        self.cart = Cart.objects.create(customer = self.customer)
+        other_customer = Customer.objects.create(name='Hassan')
+        self.empty_cart = Cart.objects.create(customer = other_customer)
+        self.product = Product.objects.create(name='Test Product', price = 500, stock_quantity=10)
+        self.cart_item = CartItem.objects.create(cart=self.cart, product=self.product, quantity=item_quantity)
+        self.product.stock_quantity -= item_quantity
+        self.product.save()
+        self.cart_details = reverse('cart_details')
+        
+    def test_cart_details_success(self):
+        data = {
+            'cart_id': self.cart.id
+        }
+        response = self.client.post(self.cart_details, data)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(self.cart.cartitem_set.filter(ordered=False).count(), 1)
+    
+    def test_cart_details_empty_cart(self):
+        data = {
+            'cart_id': 999 # Invalid cart_item_id
+        }
+        response = self.client.post(self.cart_details, data)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+        self.assertIn('error', response.data)
