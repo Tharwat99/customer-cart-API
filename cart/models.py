@@ -4,7 +4,7 @@ from product.models import Product
 
 class Cart(models.Model):
     """
-    Cart Model.
+    Cart Model related to customer one to one rel.
     """
     customer = models.OneToOneField('customer.Customer', on_delete=models.CASCADE)
 
@@ -13,7 +13,7 @@ class Cart(models.Model):
 
 class CartItem(models.Model):
     """
-    CartItem Model.
+    CartItem Model for each product added to cart with specific quantity
     """
     ADDED = 0
     REMOVED = 1
