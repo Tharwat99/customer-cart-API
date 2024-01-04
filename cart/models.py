@@ -1,13 +1,12 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-from customer.models import Customer
 from product.models import Product
 
 class Cart(models.Model):
     """
     Cart Model.
     """
-    customer = models.OneToOneField(Customer, on_delete=models.CASCADE)
+    customer = models.OneToOneField('customer.Customer', on_delete=models.CASCADE)
 
     def __str__(self):
         return self.customer.name
@@ -32,4 +31,10 @@ class CartItem(models.Model):
     status = models.PositiveSmallIntegerField(null = True, blank = True, choices=ITEM_STATUS, default = ADDED)
     created_at = models.DateTimeField(auto_now_add=True, db_index = True)
     updated_at = models.DateTimeField(auto_now=True, db_index = True)
+    
+    class Meta:
+        ordering = ['-updated_at']
+        
+    def __str__(self):
+        return self.product.name
     
