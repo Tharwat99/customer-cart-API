@@ -82,7 +82,7 @@ def add_to_cart(request):
         return Response({'error': 'Insufficient stock quantity.'}, status=status.HTTP_400_BAD_REQUEST)
     # check if product already added before update it and override new quantity
     try:
-        cart_item = CartItem.objects.get(cart =cart, product = product)
+        cart_item = CartItem.objects.get(cart =cart, product = product, ordered=False)
         cart_item.quantity = quantity
         cart_item.save()
         status_code = status.HTTP_200_OK
