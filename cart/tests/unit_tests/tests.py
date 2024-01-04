@@ -6,35 +6,6 @@ from cart.models import Cart, CartItem
 from customer.models import Customer
 from product.models import Product
 
-class CartListCreateViewTestCase(TestCase):
-    """
-    Test Cases for list and create Cart.
-    """
-    def setUp(self):
-        self.client = APIClient()
-        self.list_url = reverse('cart_list')
-        self.create_url = reverse('cart_create')
-
-    def test_list_carts(self):
-        # Create some carts with linked customers for testing
-        user1 = Customer.objects.create(name='Ali')
-        user2 = Customer.objects.create(name='Hassan')
-        Cart.objects.create(customer = user1)
-        Cart.objects.create(customer = user2)
-        response = self.client.get(self.list_url)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 2)  # Check the number of carts returned
-
-    def test_create_cart(self):
-        # Create some carts for testing
-        user1 = Customer.objects.create(name='Ali')
-        data = {'customer': user1.id}
-
-        response = self.client.post(self.create_url, data)
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(Cart.objects.count(), 1)  # Check if the cart was created
-        self.assertEqual(Cart.objects.first().customer.name, 'Ali')
-
 class CartAddItemViewTest(TestCase):
     """
     Test Cases for add item to cart.
@@ -47,12 +18,12 @@ class CartAddItemViewTest(TestCase):
         self.product = Product.objects.create(name='Test Product', price = 500, stock_quantity=10)
         self.exists_product = Product.objects.create(name='Test Product', price = 500, stock_quantity=10)
         self.exists_cart_item = CartItem.objects.create(cart=self.cart, product=self.exists_product, quantity=5) 
-        self.add_item_to_cart = reverse('add_item_to_cart')
+        self.add_item_to_cart = reverse('cart-add-item')
         
     def test_add_to_cart_success(self):
         data = {
-            'cart_id': self.cart.id,
-            'product_id': self.product.id,
+            'cart': self.cart.id,
+            'product': self.product.id,
             'quantity': 5,
         }
         response = self.client.post(self.add_item_to_cart, data)
@@ -61,14 +32,14 @@ class CartAddItemViewTest(TestCase):
     
     def test_update_already_exists_product_cart_success(self):
         data = {
-            'cart_id': self.cart.id,
-            'product_id': self.exists_product.id,
+            'cart': self.cart.id,
+            'product': self.exists_product.id,
             'quantity': 3,
         }
         self.exists_cart_item 
         self.assertEqual(self.exists_cart_item.quantity, 5)
         response = self.client.post(self.add_item_to_cart, data)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertIn('id', response.data)
         self.exists_cart_item.refresh_from_db()
         self.assertEqual(self.exists_cart_item.quantity, 3)
@@ -76,33 +47,34 @@ class CartAddItemViewTest(TestCase):
 
     def test_add_to_cart_invalid_quantity(self):
         data = {
-            'cart_id': self.cart.id,
-            'product_id': self.product.id,
+            'cart': self.cart.id,
+            'product': self.product.id,
             'quantity': 0,
         }
         response = self.client.post(self.add_item_to_cart, data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn('error', response.data)
+        self.assertEqual('Quantity must be more than zero.', response.data['quantity'][0])
+
 
     def test_add_to_cart_invalid_cart_or_product(self):
         data = {
-            'cart_id': 999,  # Invalid cart_id
-            'product_id': self.product.id,
+            'cart': 999,  # Invalid cart_id
+            'product': self.product.id,
             'quantity': 5,
         }
         response = self.client.post(self.add_item_to_cart, data)
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
-        self.assertIn('error', response.data)
-
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        
+        
     def test_add_to_cart_insufficient_stock(self):
         data = {
-            'cart_id': self.cart.id,
-            'product_id': self.product.id,
+            'cart': self.cart.id,
+            'product': self.product.id,
             'quantity': 15,  # Quantity exceeds stock
         }
         response = self.client.post(self.add_item_to_cart, data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn('error', response.data)
+
     
 class CartRemoveItemViewTest(TestCase):
     """
@@ -118,7 +90,7 @@ class CartRemoveItemViewTest(TestCase):
         self.cart_item = CartItem.objects.create(cart=self.cart, product=self.product, quantity=item_quantity)
         self.product.stock_quantity -= item_quantity
         self.product.save()
-        self.remove_item_from_cart = reverse('remove_item_from_cart')
+        self.remove_item_from_cart = reverse('cart-remove-item')
         
     def test_remove_from_cart_success(self):
         data = {
@@ -147,7 +119,7 @@ class CartUpdateItemQuantityViewTest(TestCase):
         self.cart = Cart.objects.create(customer = self.customer)
         self.product = Product.objects.create(name='Test Product', price = 500, stock_quantity=10)
         self.cart_item = CartItem.objects.create(cart=self.cart, product=self.product, quantity=3)
-        self.update_cart_item_quantity = reverse('update_cart_item_quantity')
+        self.update_cart_item_quantity = reverse('cart-update-item-quantity')
         
     def test_update_item_quantity_in_cart_success(self):
         data = {
@@ -164,7 +136,7 @@ class CartUpdateItemQuantityViewTest(TestCase):
         }
         response = self.client.post(self.update_cart_item_quantity, data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn('error', response.data)
+        self.assertEqual('Quantity must be more than zero.', response.data['quantity'][0])
 
     def test_remove_from_cart_invalid_cart_item(self):
         data = {
@@ -191,17 +163,17 @@ class CartCheckoutViewTest(TestCase):
         self.cart_item = CartItem.objects.create(cart=self.cart, product=self.product, quantity=item_quantity)
         self.product.stock_quantity -= item_quantity
         self.product.save()
-        self.cart_checkout = reverse('cart_checkout')
+        self.cart_checkout = reverse('cart-checkout-items')
         
     def test_cart_checkout_success(self):
         data = {
             'cart_id': self.cart.id
         }
-        self.assertEqual(self.cart.cartitem_set.filter(ordered=False).count(), 1)
+        self.assertEqual(self.cart.cartitem_set.filter(status=CartItem.ADDED).count(), 1)
         response = self.client.post(self.cart_checkout, data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.cart.refresh_from_db()
-        self.assertEqual(self.cart.cartitem_set.filter(ordered=False).count(), 0)
+        self.assertEqual(self.cart.cartitem_set.filter(status=CartItem.ADDED).count(), 0)
     
     def test_cart_checkout_empty_cart(self):
         data = {
@@ -227,7 +199,7 @@ class CartDetailsViewTest(TestCase):
         self.cart_item = CartItem.objects.create(cart=self.cart, product=self.product, quantity=item_quantity)
         self.product.stock_quantity -= item_quantity
         self.product.save()
-        self.cart_details = reverse('cart_details')
+        self.cart_details = reverse('cart-items-details')
         
     def test_cart_details_success(self):
         data = {
@@ -235,12 +207,11 @@ class CartDetailsViewTest(TestCase):
         }
         response = self.client.post(self.cart_details, data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(self.cart.cartitem_set.filter(ordered=False).count(), 1)
+        self.assertEqual(self.cart.cartitem_set.filter(status=CartItem.ADDED).count(), 1)
     
     def test_cart_details_empty_cart(self):
         data = {
             'cart_id': 999 # Invalid cart_item_id
         }
         response = self.client.post(self.cart_details, data)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data['cart_items']), 0)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
