@@ -14,15 +14,14 @@ class CartAddItemViewTest(TestCase):
         # Create test data
         self.client = APIClient()
         self.customer = Customer.objects.create(name='Hassan')
-        self.cart = Cart.objects.create(customer = self.customer)
         self.product = Product.objects.create(name='Test Product', price = 500, stock_quantity=10)
         self.exists_product = Product.objects.create(name='Test Product', price = 500, stock_quantity=10)
-        self.exists_cart_item = CartItem.objects.create(cart=self.cart, product=self.exists_product, quantity=5) 
+        self.exists_cart_item = CartItem.objects.create(cart=self.customer.cart, product=self.exists_product, quantity=5) 
         self.add_item_to_cart = reverse('cart-add-item')
         
     def test_add_to_cart_success(self):
         data = {
-            'cart': self.cart.id,
+            'cart': self.customer.cart.id,
             'product': self.product.id,
             'quantity': 5,
         }
@@ -32,7 +31,7 @@ class CartAddItemViewTest(TestCase):
     
     def test_update_already_exists_product_cart_success(self):
         data = {
-            'cart': self.cart.id,
+            'cart': self.customer.cart.id,
             'product': self.exists_product.id,
             'quantity': 3,
         }
@@ -47,7 +46,7 @@ class CartAddItemViewTest(TestCase):
 
     def test_add_to_cart_invalid_quantity(self):
         data = {
-            'cart': self.cart.id,
+            'cart': self.customer.cart.id,
             'product': self.product.id,
             'quantity': 0,
         }
@@ -68,7 +67,7 @@ class CartAddItemViewTest(TestCase):
         
     def test_add_to_cart_insufficient_stock(self):
         data = {
-            'cart': self.cart.id,
+            'cart': self.customer.cart.id,
             'product': self.product.id,
             'quantity': 15,  # Quantity exceeds stock
         }
@@ -85,9 +84,8 @@ class CartRemoveItemViewTest(TestCase):
         self.client = APIClient()
         item_quantity = 3
         self.customer = Customer.objects.create(name='Hassan')
-        self.cart = Cart.objects.create(customer = self.customer)
         self.product = Product.objects.create(name='Test Product', price = 500, stock_quantity=10)
-        self.cart_item = CartItem.objects.create(cart=self.cart, product=self.product, quantity=item_quantity)
+        self.cart_item = CartItem.objects.create(cart=self.customer.cart, product=self.product, quantity=item_quantity)
         self.product.stock_quantity -= item_quantity
         self.product.save()
         self.remove_item_from_cart = reverse('cart-remove-item')
@@ -116,9 +114,8 @@ class CartUpdateItemQuantityViewTest(TestCase):
         # Create test data
         self.client = APIClient()
         self.customer = Customer.objects.create(name='Hassan')
-        self.cart = Cart.objects.create(customer = self.customer)
         self.product = Product.objects.create(name='Test Product', price = 500, stock_quantity=10)
-        self.cart_item = CartItem.objects.create(cart=self.cart, product=self.product, quantity=3)
+        self.cart_item = CartItem.objects.create(cart=self.customer.cart, product=self.product, quantity=3)
         self.update_cart_item_quantity = reverse('cart-update-item-quantity')
         
     def test_update_item_quantity_in_cart_success(self):
@@ -156,28 +153,26 @@ class CartCheckoutViewTest(TestCase):
         self.client = APIClient()
         item_quantity = 3
         self.customer = Customer.objects.create(name='Hassan')
-        self.cart = Cart.objects.create(customer = self.customer)
-        other_customer = Customer.objects.create(name='Hassan')
-        self.empty_cart = Cart.objects.create(customer = other_customer)
+        self.other_customer = Customer.objects.create(name='Hassan')
         self.product = Product.objects.create(name='Test Product', price = 500, stock_quantity=10)
-        self.cart_item = CartItem.objects.create(cart=self.cart, product=self.product, quantity=item_quantity)
+        self.cart_item = CartItem.objects.create(cart=self.customer.cart, product=self.product, quantity=item_quantity)
         self.product.stock_quantity -= item_quantity
         self.product.save()
         self.cart_checkout = reverse('cart-checkout-items')
         
     def test_cart_checkout_success(self):
         data = {
-            'cart_id': self.cart.id
+            'cart_id': self.customer.cart.id
         }
-        self.assertEqual(self.cart.cartitem_set.filter(status=CartItem.ADDED).count(), 1)
+        self.assertEqual(self.customer.cart.cartitem_set.filter(status=CartItem.ADDED).count(), 1)
         response = self.client.post(self.cart_checkout, data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.cart.refresh_from_db()
-        self.assertEqual(self.cart.cartitem_set.filter(status=CartItem.ADDED).count(), 0)
+        self.customer.cart.refresh_from_db()
+        self.assertEqual(self.customer.cart.cartitem_set.filter(status=CartItem.ADDED).count(), 0)
     
     def test_cart_checkout_empty_cart(self):
         data = {
-            'cart_id': self.empty_cart.id
+            'cart_id': self.other_customer.cart.id
         }
         response = self.client.post(self.cart_checkout, data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -192,22 +187,20 @@ class CartDetailsViewTest(TestCase):
         self.client = APIClient()
         item_quantity = 3
         self.customer = Customer.objects.create(name='Hassan')
-        self.cart = Cart.objects.create(customer = self.customer)
-        other_customer = Customer.objects.create(name='Hassan')
-        self.empty_cart = Cart.objects.create(customer = other_customer)
+        self.other_customer = Customer.objects.create(name='Hassan')
         self.product = Product.objects.create(name='Test Product', price = 500, stock_quantity=10)
-        self.cart_item = CartItem.objects.create(cart=self.cart, product=self.product, quantity=item_quantity)
+        self.cart_item = CartItem.objects.create(cart=self.customer.cart, product=self.product, quantity=item_quantity)
         self.product.stock_quantity -= item_quantity
         self.product.save()
         self.cart_details = reverse('cart-items-details')
         
     def test_cart_details_success(self):
         data = {
-            'cart_id': self.cart.id
+            'cart_id': self.customer.cart.id
         }
         response = self.client.post(self.cart_details, data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(self.cart.cartitem_set.filter(status=CartItem.ADDED).count(), 1)
+        self.assertEqual(self.customer.cart.cartitem_set.filter(status=CartItem.ADDED).count(), 1)
     
     def test_cart_details_empty_cart(self):
         data = {

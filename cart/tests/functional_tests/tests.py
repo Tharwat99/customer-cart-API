@@ -22,32 +22,30 @@ class YourAppFunctionalTest(TestCase):
         self.product2 = Product.objects.create(name='Product 2', price=15.0, stock_quantity=20)
         # Create customer
         self.customer = Customer.objects.create(name='Customer 1')
-        # Create cart
-        self.cart = Cart.objects.create(customer=self.customer)
 
     def test_add_products_checkout(self):
         # Add products to the cart
         data = {
-            'cart': self.cart.id,
+            'cart': self.customer.cart.id,
             'product': self.product1.id,
             'quantity': 5,
         }
         response = self.client.post(self.add_item_to_cart, data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         data = {
-            'cart': self.cart.id,
+            'cart': self.customer.cart.id,
             'product': self.product2.id,
             'quantity': 7,
         }
         response = self.client.post(self.add_item_to_cart, data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         data = {
-            'cart_id': self.cart.id
+            'cart_id': self.customer.cart.id
         }
-        self.assertEqual(self.cart.cartitem_set.filter(status=CartItem.ADDED).count(), 2)
+        self.assertEqual(self.customer.cart.cartitem_set.filter(status=CartItem.ADDED).count(), 2)
         response = self.client.post(self.cart_checkout, data)
-        self.cart.refresh_from_db()
-        self.assertEqual(self.cart.cartitem_set.filter(status=CartItem.ADDED).count(), 0)
+        self.customer.cart.refresh_from_db()
+        self.assertEqual(self.customer.cart.cartitem_set.filter(status=CartItem.ADDED).count(), 0)
         self.product1.refresh_from_db()
         self.product2.refresh_from_db()
         # check that products stock updated after checkout
